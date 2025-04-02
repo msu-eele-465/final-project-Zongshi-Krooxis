@@ -1,8 +1,8 @@
 # Final project proposal
 
-- [ ] I have reviewed the project guidelines.
-- [ ] I will be working alone on this project.
-- [ ] No significant portion of this project will be (or has been) used in other course work.
+- [X] I have reviewed the project guidelines.
+- [X] I will be working alone on this project.
+- [X] No significant portion of this project will be (or has been) used in other course work.
 
 ## Embedded System Description
 
@@ -25,7 +25,7 @@ Briefly describe how you will test and verify that your project is a success. Th
 
 Desired Prescaler level: 
 
-- [ ] 100%
+- [X] 100%
 - [ ] 95% 
 - [ ] 90% 
 - [ ] 85% 
@@ -37,8 +37,9 @@ Desired Prescaler level:
 **Outline how you meet the requirements for your desired prescalar level**
 
 **The inputs to the system will be:**
-1.  Short description of input #1
-2.  
+1.  Shutdown Switch
+2.  Reset Switch
+3.  Dip Switches
 
 **The outputs of the system will be:**
 1.   Short description of output #1
