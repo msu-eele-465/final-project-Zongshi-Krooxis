@@ -67,10 +67,10 @@ int main(void) {
             for(k = 0; k < 10; k++){
                 for(l = 0; l < 10; l++){
                     for(m = 0; m < 10; m++){
-                        nixNum(j, &NIX1OUT);
-                        nixNum(k, &NIX2OUT);
-                        nixNum(l, &NIX3OUT);
-                        nixNum(m, &NIX4OUT);
+                        nixNum(m, &NIX1OUT);
+                        nixNum(l, &NIX2OUT);
+                        nixNum(k, &NIX3OUT);
+                        nixNum(j, &NIX4OUT);
                         delay(); 
                     }
                 }
