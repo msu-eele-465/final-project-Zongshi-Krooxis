@@ -2,91 +2,90 @@
 #include <stdbool.h>
 
 /**
- *  PROJECT 6: Keypad Test (Modified for RTC I2C on UCB1)
+ *  Final Project: Keypad Test (Modified for RTC I2C on UCB1)
  *
- *  Aaron McLean & Alex Deadmond    EELE 465
+ *  Aaron McLean    EELE 465
  *
- *  Updated: 05/02/2025
+ *  Updated: 05/05/2025
  *
  *  Reads minutes and hours from RTC via UCB1 I2C (P4.6 = SCL, P4.7 = SDA)
  */
 
-volatile unsigned char TimeData[2]; // Minutes and Hours
-volatile unsigned char RXByteCtr = 0;
-volatile bool receiveDone = false;
+#include <msp430.h>
+
+unsigned char TimeData[2];  // Store minutes and hours
+unsigned char RXByteCtr = 0;
 
 int main(void)
 {
-    WDTCTL = WDTPW | WDTHOLD; // Stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;       // Stop watchdog timer
 
-    // --- Configure UCB1 for I2C Master Mode ---
-    UCB1CTLW0 |= UCSWRST;                     // Hold eUSCI in reset
-    UCB1CTLW0 = UCSSEL_2 | UCMST | UCMODE_3 | UCSWRST; // SMCLK, Master, I2C mode
-    UCB1BRW = 10;                             // SCL = SMCLK / 10 = 100kHz
-    UCB1I2CSA = 0x0068;                         // RTC I2C address (DS3231)
-    UCB1CTLW1 |= UCASTP_2;                    // Auto stop after byte count
-    PM5CTL0 &= ~LOCKLPM5;                     // Enable I/O
+    // 1. Put eUSCI_B1 into software reset
+    UCB1CTLW0 |= UCSWRST;
 
-    // --- Set up P4.6 (SCL) and P4.7 (SDA) ---
-    P4SEL0 |= BIT6 | BIT7;                    // I2C SCL/SDA
+    // 2. Configure eUSCI_B1
+    UCB1CTLW0 |= UCSSEL_3;          // SMCLK
+    UCB1BRW = 10;                   // 100kHz SCL
+    UCB1CTLW0 |= UCMODE_3 | UCMST;  // I2C mode, Master mode
+    UCB1I2CSA = 0x68;               // Slave address (DS3231M)
+    UCB1TBCNT = 2;                  // Receive 2 bytes
+    UCB1CTLW1 |= UCASTP_2;          // Auto STOP when TBCNT reached
+
+    // 3. Configure I2C Pins for UCB1
     P4SEL1 &= ~(BIT6 | BIT7);
+    P4SEL0 |= BIT6 | BIT7;          // SDA = P4.6, SCL = P4.7
+    PM5CTL0 &= ~LOCKLPM5;           // Disable high-impedance mode
 
-    UCB1CTLW0 &= ~UCSWRST;                    // Release from reset
-    UCB1IE |= UCTXIE0 | UCRXIE0;              // Enable TX and RX interrupts
+    // 4. Release eUSCI_B1 from SW reset
+    UCB1CTLW0 &= ~UCSWRST;
 
-    __enable_interrupt();                     // Global interrupt enable
+    // 5. Enable interrupts
+    UCB1IE |= UCTXIE0 | UCRXIE0;    // Enable Tx and Rx interrupts
+    __enable_interrupt();
 
-    while (1) {
+    while (1)
+    {
         RXByteCtr = 0;
-        receiveDone = false;
 
-        // Step 1: Set register pointer to 0x01 (minutes)
-        UCB1TBCNT = 1;
-        UCB1CTLW0 |= UCTR | UCTXSTT; // TX mode + START
+        // Transmit register address (0x01 for Minutes)
+        UCB1CTLW0 |= UCTR;          // TX mode
+        UCB1CTLW0 |= UCTXSTT;       // Generate START condition
 
-        while (!receiveDone); // Wait until ISR finishes
+        while ((UCB1IFG & UCSTPIFG) == 0);  // Wait for STOP
+        UCB1IFG &= ~UCSTPIFG;
 
-        // Step 2: Read 2 bytes (minutes, hours)
-        RXByteCtr = 0;
-        receiveDone = false;
-        UCB1TBCNT = 2;
-        UCB1CTLW0 &= ~UCTR;      // RX mode
-        UCB1CTLW0 |= UCTXSTT;    // START
+        // Read 2 bytes from slave
+        UCB1CTLW0 &= ~UCTR;         // RX mode
+        UCB1CTLW0 |= UCTXSTT;       // Generate START condition
 
-        while (!receiveDone); // Wait until 2 bytes received
+        while ((UCB1IFG & UCSTPIFG) == 0);  // Wait for STOP
+        UCB1IFG &= ~UCSTPIFG;
 
-
-        unsigned char min_bcd = TimeData[0];
-        unsigned char hour_bcd = TimeData[1];
-
-        unsigned char min_tens = (min_bcd >> 4) & 0x0F;
-        unsigned char min_ones = min_bcd & 0x0F;
-        unsigned char hour_tens = (hour_bcd >> 4) & 0x0F;
-        unsigned char hour_ones = hour_bcd & 0x0F;
-
-        // Process the time if needed, or delay
-        __delay_cycles(100000);
+        __delay_cycles(50000);      // Delay between reads
     }
+
+    return 0;
 }
 
-// --- I2C ISR for UCB1 ---
+
 #pragma vector=EUSCI_B1_VECTOR
-__interrupt void EUSCI_B1_ISR(void)
+__interrupt void EUSCI_B1_I2C_ISR(void)
 {
-    switch (UCB1IV) {
+    switch (UCB1IV)
+    {
         case 0x16:  // RXIFG0
-            TimeData[RXByteCtr++] = UCB1RXBUF;
-            if (RXByteCtr >= 2) {
-                receiveDone = true;
+            if (RXByteCtr < 2)
+            {
+                TimeData[RXByteCtr++] = UCB1RXBUF;
             }
             break;
 
         case 0x18:  // TXIFG0
-            UCB1TXBUF = 0x01; // Set register pointer to minutes (0x01)
-            receiveDone = true;
+            UCB1TXBUF = 0x01;  // Register address to read from (Minutes)
             break;
 
         default:
             break;
     }
 }
+

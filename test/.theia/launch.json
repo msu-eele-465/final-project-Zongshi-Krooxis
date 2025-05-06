@@ -9,6 +9,15 @@
                 "name": "rtcDriver",
                 "resourceId": "/rtcDriver"
             }
+        },
+        {
+            "name": "rtcSeconds",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "rtcSeconds",
+                "resourceId": "/rtcSeconds"
+            }
         }
     ]
 }
