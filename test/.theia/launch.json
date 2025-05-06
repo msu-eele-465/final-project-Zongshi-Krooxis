@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "rtcDriver",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "rtcDriver",
+                "resourceId": "/rtcDriver"
+            }
+        },
+        {
+            "name": "rtcSeconds",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "rtcSeconds",
+                "resourceId": "/rtcSeconds"
+            }
+        },
+        {
+            "name": "rotEncoderDriver",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "rotEncoderDriver",
+                "resourceId": "/rotEncoderDriver"
+            }
+        }
+    ]
+}
