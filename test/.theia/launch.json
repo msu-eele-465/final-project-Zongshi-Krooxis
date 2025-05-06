@@ -18,6 +18,15 @@
                 "name": "rtcSeconds",
                 "resourceId": "/rtcSeconds"
             }
+        },
+        {
+            "name": "rotEncoderDriver",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "rotEncoderDriver",
+                "resourceId": "/rotEncoderDriver"
+            }
         }
     ]
 }
