@@ -1,18 +1,17 @@
 #include <msp430.h>
 
 volatile int counter = 0;
-volatile unsigned char last_state_A = 0;
 
 void setupGPIO(void) {
-    // Set P1.1 (CLK / A) and P1.2 (DT / B) as inputs with pull-up resistors
-    P1DIR &= ~(BIT1 | BIT2);             // Inputs
-    P1REN |= (BIT1 | BIT2);              // Enable pull-up/down resistors
-    P1OUT |= (BIT1 | BIT2);              // Select pull-up
+    // Set P2.0 (CLK / A) and P2.1 (DT / B) as inputs with pull-up resistors
+    P2DIR &= ~(BIT0 | BIT1);             // Inputs
+    P2REN |= (BIT0 | BIT1);              // Enable pull-up/down resistors
+    P2OUT |= (BIT0 | BIT1);              // Select pull-up
 
-    // Configure interrupt on P1.1 (CLK)
-    P1IES |= BIT1;                       // Interrupt on high-to-low edge
-    P1IFG &= ~BIT1;                      // Clear interrupt flag
-    P1IE |= BIT1;                        // Enable interrupt
+    // Configure interrupt on P2.0 (CLK)
+    P2IES |= BIT0;                       // Interrupt on high-to-low edge
+    P2IFG &= ~BIT0;                      // Clear interrupt flag
+    P2IE |= BIT0;                        // Enable interrupt
 }
 
 void main(void) {
@@ -20,20 +19,21 @@ void main(void) {
 
     setupGPIO();
 
+    PM5CTL0 &= ~LOCKLPM5;               // Disable LPM
+
     __enable_interrupt();               // Enable global interrupts
 
     while (1) {
-        // Main loop does nothing; all logic handled in ISR
-        __no_operation();               // Can place breakpoint here to watch `counter`
+        __no_operation();               // Idle loop; watch `counter`
     }
 }
 
-// Port 1 ISR
-#pragma vector=PORT1_VECTOR
-__interrupt void Port_1(void) {
-    if (P1IFG & BIT1) {                 // Check if interrupt was from P1.1 (CLK)
-        unsigned char stateA = (P1IN & BIT1) >> 1;
-        unsigned char stateB = (P1IN & BIT2) >> 2;
+// Port 2 ISR
+#pragma vector=PORT2_VECTOR
+__interrupt void Port_2(void) {
+    if (P2IFG & BIT0) {                 // Check if interrupt was from P2.0 (CLK)
+        unsigned char stateA = (P2IN & BIT0) >> 0;
+        unsigned char stateB = (P2IN & BIT1) >> 1;
 
         if (stateB != stateA) {
             counter++;                 // Clockwise
@@ -41,6 +41,6 @@ __interrupt void Port_1(void) {
             counter--;                 // Counterclockwise
         }
 
-        P1IFG &= ~BIT1;                // Clear interrupt flag
+        P2IFG &= ~BIT0;                // Clear interrupt flag
     }
 }
